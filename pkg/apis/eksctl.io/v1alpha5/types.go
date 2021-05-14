@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	kubewrapper "github.com/weaveworks/eksctl/pkg/kubernetes"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -574,6 +575,12 @@ type ClusterProvider interface {
 	WaitTimeout() time.Duration
 	ConfigProvider() client.ConfigProvider
 	Session() *session.Session
+}
+
+// KubeProvider is the interface to helper funcs relating to k8s API,
+// k8s config and AWS APIs
+type KubeProvider interface {
+	NewRawClient(spec *ClusterConfig) (*kubewrapper.RawClient, error)
 }
 
 // ProviderConfig holds global parameters for all interactions with AWS APIs

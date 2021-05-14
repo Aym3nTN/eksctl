@@ -53,6 +53,8 @@ type ClusterProvider struct {
 	Provider api.ClusterProvider
 	// informative fields, i.e. used as outputs
 	Status *ProviderStatus
+	// field for k8s client k8s config calls
+	KubeProvider api.KubeProvider
 }
 
 // ProviderServices stores the used APIs
