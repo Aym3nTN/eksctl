@@ -122,6 +122,7 @@ func (m *Manager) Create(options CreateOpts, nodegroupFilter filter.NodegroupFil
 func (m *Manager) nodeCreationTasks(options CreateOpts, nodegroupFilter filter.NodegroupFilter, supportsManagedNodes, isOwnedCluster bool) error {
 	cfg := m.cfg
 	meta := cfg.Metadata
+	init := m.init
 
 	if err := nodegroupFilter.SetOnlyLocal(m.ctl.Provider.EKS(), m.stackManager, cfg); err != nil {
 		return err
@@ -159,7 +160,7 @@ func (m *Manager) nodeCreationTasks(options CreateOpts, nodegroupFilter filter.N
 		taskTree.Append(m.stackManager.NewClusterCompatTask())
 	}
 
-	awsNodeUsesIRSA, err := eks.DoesAWSNodeUseIRSA(m.ctl.Provider, m.clientSet)
+	awsNodeUsesIRSA, err := init.DoesAWSNodeUseIRSA(m.ctl.Provider, m.clientSet)
 	if err != nil {
 		return errors.Wrap(err, "couldn't check aws-node for annotation")
 	}
@@ -188,18 +189,10 @@ func (m *Manager) nodeCreationTasks(options CreateOpts, nodegroupFilter filter.N
 	}
 
 	taskTree.Append(allNodeGroupTasks)
-	logger.Info(taskTree.Describe())
-	errs := taskTree.DoAllSync()
-	if len(errs) > 0 {
-		logger.Info("%d error(s) occurred and nodegroups haven't been created properly, you may wish to check CloudFormation console", len(errs))
-		logger.Info("to cleanup resources, run 'eksctl delete nodegroup --region=%s --cluster=%s --name=<name>' for each of the failed nodegroup", meta.Region, meta.Name)
-		for _, err := range errs {
-			if err != nil {
-				logger.Critical("%s\n", err.Error())
-			}
-		}
-		return fmt.Errorf("failed to create nodegroups for cluster %q", meta.Name)
+	if err := m.stackManager.DoAllNodegroupStackTasks(taskTree, meta.Region, meta.Name); err != nil {
+		return err
 	}
+
 	return nil
 }
 

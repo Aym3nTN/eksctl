@@ -7,9 +7,24 @@ import (
 	"github.com/aws/amazon-ec2-instance-selector/v2/pkg/selector"
 	"github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/eks"
+	"k8s.io/client-go/kubernetes"
 )
 
 type FakeNodeGroupInitialiser struct {
+	DoesAWSNodeUseIRSAStub        func(v1alpha5.ClusterProvider, kubernetes.Interface) (bool, error)
+	doesAWSNodeUseIRSAMutex       sync.RWMutex
+	doesAWSNodeUseIRSAArgsForCall []struct {
+		arg1 v1alpha5.ClusterProvider
+		arg2 kubernetes.Interface
+	}
+	doesAWSNodeUseIRSAReturns struct {
+		result1 bool
+		result2 error
+	}
+	doesAWSNodeUseIRSAReturnsOnCall map[int]struct {
+		result1 bool
+		result2 error
+	}
 	ExpandInstanceSelectorOptionsStub        func([]v1alpha5.NodePool, []string) error
 	expandInstanceSelectorOptionsMutex       sync.RWMutex
 	expandInstanceSelectorOptionsArgsForCall []struct {
@@ -59,6 +74,71 @@ type FakeNodeGroupInitialiser struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSA(arg1 v1alpha5.ClusterProvider, arg2 kubernetes.Interface) (bool, error) {
+	fake.doesAWSNodeUseIRSAMutex.Lock()
+	ret, specificReturn := fake.doesAWSNodeUseIRSAReturnsOnCall[len(fake.doesAWSNodeUseIRSAArgsForCall)]
+	fake.doesAWSNodeUseIRSAArgsForCall = append(fake.doesAWSNodeUseIRSAArgsForCall, struct {
+		arg1 v1alpha5.ClusterProvider
+		arg2 kubernetes.Interface
+	}{arg1, arg2})
+	stub := fake.DoesAWSNodeUseIRSAStub
+	fakeReturns := fake.doesAWSNodeUseIRSAReturns
+	fake.recordInvocation("DoesAWSNodeUseIRSA", []interface{}{arg1, arg2})
+	fake.doesAWSNodeUseIRSAMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSACallCount() int {
+	fake.doesAWSNodeUseIRSAMutex.RLock()
+	defer fake.doesAWSNodeUseIRSAMutex.RUnlock()
+	return len(fake.doesAWSNodeUseIRSAArgsForCall)
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSACalls(stub func(v1alpha5.ClusterProvider, kubernetes.Interface) (bool, error)) {
+	fake.doesAWSNodeUseIRSAMutex.Lock()
+	defer fake.doesAWSNodeUseIRSAMutex.Unlock()
+	fake.DoesAWSNodeUseIRSAStub = stub
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSAArgsForCall(i int) (v1alpha5.ClusterProvider, kubernetes.Interface) {
+	fake.doesAWSNodeUseIRSAMutex.RLock()
+	defer fake.doesAWSNodeUseIRSAMutex.RUnlock()
+	argsForCall := fake.doesAWSNodeUseIRSAArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSAReturns(result1 bool, result2 error) {
+	fake.doesAWSNodeUseIRSAMutex.Lock()
+	defer fake.doesAWSNodeUseIRSAMutex.Unlock()
+	fake.DoesAWSNodeUseIRSAStub = nil
+	fake.doesAWSNodeUseIRSAReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeNodeGroupInitialiser) DoesAWSNodeUseIRSAReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.doesAWSNodeUseIRSAMutex.Lock()
+	defer fake.doesAWSNodeUseIRSAMutex.Unlock()
+	fake.DoesAWSNodeUseIRSAStub = nil
+	if fake.doesAWSNodeUseIRSAReturnsOnCall == nil {
+		fake.doesAWSNodeUseIRSAReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
+		})
+	}
+	fake.doesAWSNodeUseIRSAReturnsOnCall[i] = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeNodeGroupInitialiser) ExpandInstanceSelectorOptions(arg1 []v1alpha5.NodePool, arg2 []string) error {
@@ -326,6 +406,8 @@ func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsReturnsO
 func (fake *FakeNodeGroupInitialiser) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.doesAWSNodeUseIRSAMutex.RLock()
+	defer fake.doesAWSNodeUseIRSAMutex.RUnlock()
 	fake.expandInstanceSelectorOptionsMutex.RLock()
 	defer fake.expandInstanceSelectorOptionsMutex.RUnlock()
 	fake.newAWSSelectorSessionMutex.RLock()

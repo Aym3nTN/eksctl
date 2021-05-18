@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/weaveworks/eksctl/pkg/ami"
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
+	"github.com/weaveworks/eksctl/pkg/kubernetes"
 	"github.com/weaveworks/eksctl/pkg/ssh"
 	"github.com/weaveworks/eksctl/pkg/vpc"
 )
@@ -28,6 +29,7 @@ type NodeGroupInitialiser interface {
 	ExpandInstanceSelectorOptions(nodePools []api.NodePool, clusterAZs []string) error
 	NewAWSSelectorSession(provider api.ClusterProvider) *selector.Selector
 	ValidateLegacySubnetsForNodeGroups(spec *api.ClusterConfig, provider api.ClusterProvider) error
+	DoesAWSNodeUseIRSA(provider api.ClusterProvider, clientSet kubernetes.Interface) (bool, error)
 }
 
 // A NodeGroupService provides helpers for nodegroup creation
