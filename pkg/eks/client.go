@@ -115,7 +115,3 @@ func (c *ClusterProvider) NewRawClient(spec *api.ClusterConfig) (*kubewrapper.Ra
 
 	return kubewrapper.NewRawClient(clientSet, client.rawConfig)
 }
-
-func (c *ClusterProvider) ServerVersion(rawClient *kubewrapper.RawClient) (string, error) {
-	return rawClient.ServerVersion()
-}

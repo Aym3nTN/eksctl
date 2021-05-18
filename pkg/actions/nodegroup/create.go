@@ -51,7 +51,7 @@ func (m *Manager) Create(options CreateOpts, nodegroupFilter filter.NodeGroupFil
 	}
 
 	var isOwnedCluster = true
-	if err := ctl.KubeProvider.LoadClusterIntoSpecFromStack(cfg, m.stackManager); err != nil {
+	if err := ctl.LoadClusterIntoSpecFromStack(cfg, m.stackManager); err != nil {
 		switch e := err.(type) {
 		case *manager.StackNotFoundErr:
 			logger.Warning("%s, will attempt to create nodegroup(s) on non eksctl-managed cluster", e.Error())
@@ -66,7 +66,7 @@ func (m *Manager) Create(options CreateOpts, nodegroupFilter filter.NodeGroupFil
 	}
 
 	// EKS 1.14 clusters created with prior versions of eksctl may not support Managed Nodes
-	supportsManagedNodes, err := ctl.KubeProvider.SupportsManagedNodes(cfg)
+	supportsManagedNodes, err := ctl.SupportsManagedNodes(cfg)
 	if err != nil {
 		return err
 	}
@@ -276,12 +276,12 @@ func checkVersion(ctl *eks.ClusterProvider, meta *api.ClusterMeta) error {
 }
 
 func checkARMSupport(ctl *eks.ClusterProvider, clientSet kubernetes.Interface, cfg *api.ClusterConfig, skipOutdatedAddonsCheck bool) error {
-	rawClient, err := ctl.KubeProvider.NewRawClient(cfg)
+	rawClient, err := ctl.NewRawClient(cfg)
 	if err != nil {
 		return err
 	}
 
-	kubernetesVersion, err := ctl.KubeProvider.ServerVersion(rawClient)
+	kubernetesVersion, err := rawClient.ServerVersion()
 	if err != nil {
 		return err
 	}
