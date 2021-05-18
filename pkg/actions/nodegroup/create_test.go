@@ -109,6 +109,25 @@ func TestCreateNodegroups(t *testing.T) {
 			},
 			expErr: errors.Wrap(errors.New("bang"), "cluster compatibility check failed"),
 		},
+		"err when it fails to validate legacy subnets for ng": {
+			version: "1.17",
+			pStatus: &eks.ProviderStatus{
+				ClusterInfo: &eks.ClusterInfo{
+					Cluster: testutils.NewFakeCluster("my-cluster", ""),
+				},
+			},
+			mockCalls: func(p *mockprovider.MockProvider, k *fakes.FakeKubeProvider, init *fakes.FakeNodeGroupInitialiser, f *utilFakes.FakeNodegroupFilter) {
+				k.NewRawClientReturns(&kubernetes.RawClient{}, nil)
+				k.ServerVersionReturns("1.17", nil)
+				k.LoadClusterIntoSpecFromStackReturns(nil)
+				k.SupportsManagedNodesReturns(true, nil)
+				init.NewAWSSelectorSessionReturns(nil)
+				init.ExpandInstanceSelectorOptionsReturns(nil)
+				k.ValidateClusterForCompatibilityReturns(nil)
+				init.ValidateLegacySubnetsForNodeGroupsReturns(errors.New("bang"))
+			},
+			expErr: errors.New("bang"),
+		},
 		"existing local ng stacks in config file fail to be listed": {
 			version: "1.17",
 			pStatus: &eks.ProviderStatus{
@@ -149,13 +168,8 @@ func TestCreateNodegroups(t *testing.T) {
 	}
 	for k, tc := range tests {
 		t.Run(k, func(t *testing.T) {
-			cfg := api.NewClusterConfig()
-			cfg.Metadata.Name = "my-cluster"
+			cfg := newClusterConfig()
 			cfg.Metadata.Version = tc.version
-			cfg.Status = &api.ClusterStatus{
-				Endpoint:                 "https://localhost/",
-				CertificateAuthorityData: []byte("dGVzdAo="),
-			}
 
 			k := &fakes.FakeKubeProvider{}
 			init := &fakes.FakeNodeGroupInitialiser{}
@@ -177,5 +191,30 @@ func TestCreateNodegroups(t *testing.T) {
 				assert.EqualError(t, tc.expErr, err.Error())
 			}
 		})
+	}
+}
+
+func newClusterConfig() *api.ClusterConfig {
+	return &api.ClusterConfig{
+		TypeMeta: api.ClusterConfigTypeMeta(),
+		Metadata: &api.ClusterMeta{
+			Name:    "my-cluster",
+			Version: api.DefaultVersion,
+		},
+		Status: &api.ClusterStatus{
+			Endpoint:                 "https://localhost/",
+			CertificateAuthorityData: []byte("dGVzdAo="),
+		},
+		IAM: api.NewClusterIAM(),
+		VPC: api.NewClusterVPC(),
+		CloudWatch: &api.ClusterCloudWatch{
+			ClusterLogging: &api.ClusterCloudWatchLogging{},
+		},
+		PrivateCluster: &api.PrivateCluster{},
+		NodeGroups: []*api.NodeGroup{{
+			NodeGroupBase: &api.NodeGroupBase{
+				Name: "my-ng",
+			}},
+		},
 	}
 }

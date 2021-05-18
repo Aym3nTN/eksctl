@@ -11,6 +11,7 @@ import (
 	"github.com/weaveworks/eksctl/pkg/ami"
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/ssh"
+	"github.com/weaveworks/eksctl/pkg/vpc"
 )
 
 // InstanceSelector selects a set of instance types matching the specified instance selector criteria
@@ -26,6 +27,7 @@ type NodeGroupInitialiser interface {
 	Normalize(nodePools []api.NodePool, clusterMeta *api.ClusterMeta) error
 	ExpandInstanceSelectorOptions(nodePools []api.NodePool, clusterAZs []string) error
 	NewAWSSelectorSession(provider api.ClusterProvider) *selector.Selector
+	ValidateLegacySubnetsForNodeGroups(spec *api.ClusterConfig, provider api.ClusterProvider) error
 }
 
 // A NodeGroupService provides helpers for nodegroup creation
@@ -188,4 +190,8 @@ func (m *NodeGroupService) expandInstanceSelector(ins *api.InstanceSelector, azs
 	}
 
 	return instanceTypes, nil
+}
+
+func (m *NodeGroupService) ValidateLegacySubnetsForNodeGroups(spec *api.ClusterConfig, provider api.ClusterProvider) error {
+	return vpc.ValidateLegacySubnetsForNodeGroups(spec, provider)
 }

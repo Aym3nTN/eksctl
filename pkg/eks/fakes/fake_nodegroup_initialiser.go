@@ -45,6 +45,18 @@ type FakeNodeGroupInitialiser struct {
 	normalizeReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ValidateLegacySubnetsForNodeGroupsStub        func(*v1alpha5.ClusterConfig, v1alpha5.ClusterProvider) error
+	validateLegacySubnetsForNodeGroupsMutex       sync.RWMutex
+	validateLegacySubnetsForNodeGroupsArgsForCall []struct {
+		arg1 *v1alpha5.ClusterConfig
+		arg2 v1alpha5.ClusterProvider
+	}
+	validateLegacySubnetsForNodeGroupsReturns struct {
+		result1 error
+	}
+	validateLegacySubnetsForNodeGroupsReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -249,6 +261,68 @@ func (fake *FakeNodeGroupInitialiser) NormalizeReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroups(arg1 *v1alpha5.ClusterConfig, arg2 v1alpha5.ClusterProvider) error {
+	fake.validateLegacySubnetsForNodeGroupsMutex.Lock()
+	ret, specificReturn := fake.validateLegacySubnetsForNodeGroupsReturnsOnCall[len(fake.validateLegacySubnetsForNodeGroupsArgsForCall)]
+	fake.validateLegacySubnetsForNodeGroupsArgsForCall = append(fake.validateLegacySubnetsForNodeGroupsArgsForCall, struct {
+		arg1 *v1alpha5.ClusterConfig
+		arg2 v1alpha5.ClusterProvider
+	}{arg1, arg2})
+	stub := fake.ValidateLegacySubnetsForNodeGroupsStub
+	fakeReturns := fake.validateLegacySubnetsForNodeGroupsReturns
+	fake.recordInvocation("ValidateLegacySubnetsForNodeGroups", []interface{}{arg1, arg2})
+	fake.validateLegacySubnetsForNodeGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsCallCount() int {
+	fake.validateLegacySubnetsForNodeGroupsMutex.RLock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.RUnlock()
+	return len(fake.validateLegacySubnetsForNodeGroupsArgsForCall)
+}
+
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsCalls(stub func(*v1alpha5.ClusterConfig, v1alpha5.ClusterProvider) error) {
+	fake.validateLegacySubnetsForNodeGroupsMutex.Lock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.Unlock()
+	fake.ValidateLegacySubnetsForNodeGroupsStub = stub
+}
+
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsArgsForCall(i int) (*v1alpha5.ClusterConfig, v1alpha5.ClusterProvider) {
+	fake.validateLegacySubnetsForNodeGroupsMutex.RLock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.RUnlock()
+	argsForCall := fake.validateLegacySubnetsForNodeGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsReturns(result1 error) {
+	fake.validateLegacySubnetsForNodeGroupsMutex.Lock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.Unlock()
+	fake.ValidateLegacySubnetsForNodeGroupsStub = nil
+	fake.validateLegacySubnetsForNodeGroupsReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeNodeGroupInitialiser) ValidateLegacySubnetsForNodeGroupsReturnsOnCall(i int, result1 error) {
+	fake.validateLegacySubnetsForNodeGroupsMutex.Lock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.Unlock()
+	fake.ValidateLegacySubnetsForNodeGroupsStub = nil
+	if fake.validateLegacySubnetsForNodeGroupsReturnsOnCall == nil {
+		fake.validateLegacySubnetsForNodeGroupsReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.validateLegacySubnetsForNodeGroupsReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeNodeGroupInitialiser) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -258,6 +332,8 @@ func (fake *FakeNodeGroupInitialiser) Invocations() map[string][][]interface{} {
 	defer fake.newAWSSelectorSessionMutex.RUnlock()
 	fake.normalizeMutex.RLock()
 	defer fake.normalizeMutex.RUnlock()
+	fake.validateLegacySubnetsForNodeGroupsMutex.RLock()
+	defer fake.validateLegacySubnetsForNodeGroupsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
