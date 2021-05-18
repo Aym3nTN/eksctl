@@ -228,6 +228,28 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 		},
 		expErr: errors.New("err"),
 	}),
+
+	Entry("[happy path] creates nodegroup", ngEntry{
+		version: "1.17",
+		pStatus: &eks.ProviderStatus{
+			ClusterInfo: &eks.ClusterInfo{
+				Cluster: testutils.NewFakeCluster("my-cluster", ""),
+			},
+		},
+		mockCalls: func(p *mockprovider.MockProvider, k *fakes.FakeKubeProvider, init *fakes.FakeNodeGroupInitialiser, f *utilFakes.FakeNodegroupFilter, sm *cfFakes.FakeStackManager) {
+			k.NewRawClientReturns(&kubernetes.RawClient{}, nil)
+			k.ServerVersionReturns("1.17", nil)
+			k.LoadClusterIntoSpecFromStackReturns(nil)
+			k.SupportsManagedNodesReturns(true, nil)
+			init.NewAWSSelectorSessionReturns(nil)
+			init.ExpandInstanceSelectorOptionsReturns(nil)
+			k.ValidateClusterForCompatibilityReturns(nil)
+			f.SetOnlyLocalReturns(nil)
+			init.DoesAWSNodeUseIRSAReturns(false, nil)
+			sm.DoAllNodegroupStackTasksReturns(nil)
+		},
+		expErr: nil,
+	}),
 )
 
 func newClusterConfig() *api.ClusterConfig {
