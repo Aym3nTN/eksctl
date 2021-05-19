@@ -181,22 +181,6 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 		expErr: errors.New("err"),
 	}),
 
-	Entry("[happy path] creates nodegroup with no options", ngEntry{
-		mockCalls: func(p *mockprovider.MockProvider, k *fakes.FakeKubeProvider, init *fakes.FakeNodeGroupInitialiser, f *utilFakes.FakeNodegroupFilter, sm *cfFakes.FakeStackManager) {
-			k.NewRawClientReturns(&kubernetes.RawClient{}, nil)
-			k.ServerVersionReturns("1.17", nil)
-			k.LoadClusterIntoSpecFromStackReturns(nil)
-			k.SupportsManagedNodesReturns(true, nil)
-			init.NewAWSSelectorSessionReturns(nil)
-			init.ExpandInstanceSelectorOptionsReturns(nil)
-			k.ValidateClusterForCompatibilityReturns(nil)
-			f.SetOnlyLocalReturns(nil)
-			init.DoesAWSNodeUseIRSAReturns(false, nil)
-			sm.DoAllNodegroupStackTasksReturns(nil)
-		},
-		expErr: nil,
-	}),
-
 	Entry("fails to update auth configmap", ngEntry{
 		opts: nodegroup.CreateOpts{
 			DryRun:              true,
@@ -213,9 +197,25 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 			f.SetOnlyLocalReturns(nil)
 			init.DoesAWSNodeUseIRSAReturns(false, nil)
 			sm.DoAllNodegroupStackTasksReturns(nil)
-			k.UpdateAuthConfigMapReturns(errors.New("err"))
+			init.UpdateAuthConfigMapReturns(errors.New("err"))
 		},
 		expErr: errors.New("err"),
+	}),
+
+	Entry("[happy path] creates nodegroup with no options", ngEntry{
+		mockCalls: func(p *mockprovider.MockProvider, k *fakes.FakeKubeProvider, init *fakes.FakeNodeGroupInitialiser, f *utilFakes.FakeNodegroupFilter, sm *cfFakes.FakeStackManager) {
+			k.NewRawClientReturns(&kubernetes.RawClient{}, nil)
+			k.ServerVersionReturns("1.17", nil)
+			k.LoadClusterIntoSpecFromStackReturns(nil)
+			k.SupportsManagedNodesReturns(true, nil)
+			init.NewAWSSelectorSessionReturns(nil)
+			init.ExpandInstanceSelectorOptionsReturns(nil)
+			k.ValidateClusterForCompatibilityReturns(nil)
+			f.SetOnlyLocalReturns(nil)
+			init.DoesAWSNodeUseIRSAReturns(false, nil)
+			sm.DoAllNodegroupStackTasksReturns(nil)
+		},
+		expErr: nil,
 	}),
 
 	Entry("[happy path] creates nodegroup with all the options", ngEntry{
@@ -238,7 +238,7 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 			f.SetOnlyLocalReturns(nil)
 			init.DoesAWSNodeUseIRSAReturns(false, nil)
 			sm.DoAllNodegroupStackTasksReturns(nil)
-			k.UpdateAuthConfigMapReturns(nil)
+			init.UpdateAuthConfigMapReturns(nil)
 		},
 		expErr: nil,
 	}),
@@ -262,6 +262,11 @@ func newClusterConfig() *api.ClusterConfig {
 		},
 		PrivateCluster: &api.PrivateCluster{},
 		NodeGroups: []*api.NodeGroup{{
+			NodeGroupBase: &api.NodeGroupBase{
+				Name: "my-ng",
+			}},
+		},
+		ManagedNodeGroups: []*api.ManagedNodeGroup{{
 			NodeGroupBase: &api.NodeGroupBase{
 				Name: "my-ng",
 			}},
