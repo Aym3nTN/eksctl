@@ -23,6 +23,7 @@ import (
 type ngEntry struct {
 	version   string
 	pStatus   *eks.ProviderStatus
+	dryRun    bool
 	mockCalls func(*mockprovider.MockProvider, *fakes.FakeKubeProvider, *fakes.FakeNodeGroupInitialiser, *utilFakes.FakeNodegroupFilter, *cfFakes.FakeStackManager)
 	expErr    error
 }
@@ -48,7 +49,9 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 		t.mockCalls(p, k, init, ngFilter, sm)
 	}
 
-	err := m.Create(nodegroup.CreateOpts{}, ngFilter)
+	err := m.Create(nodegroup.CreateOpts{
+		DryRun: t.dryRun,
+	}, ngFilter)
 	if err != nil {
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(MatchError(ContainSubstring(t.expErr.Error())))
@@ -227,6 +230,29 @@ var _ = DescribeTable("Create", func(t ngEntry) {
 			sm.DoAllNodegroupStackTasksReturns(errors.New("err"))
 		},
 		expErr: errors.New("err"),
+	}),
+
+	Entry("[happy path] creates nodegroup as dry run", ngEntry{
+		version: "1.17",
+		pStatus: &eks.ProviderStatus{
+			ClusterInfo: &eks.ClusterInfo{
+				Cluster: testutils.NewFakeCluster("my-cluster", ""),
+			},
+		},
+		dryRun: true,
+		mockCalls: func(p *mockprovider.MockProvider, k *fakes.FakeKubeProvider, init *fakes.FakeNodeGroupInitialiser, f *utilFakes.FakeNodegroupFilter, sm *cfFakes.FakeStackManager) {
+			k.NewRawClientReturns(&kubernetes.RawClient{}, nil)
+			k.ServerVersionReturns("1.17", nil)
+			k.LoadClusterIntoSpecFromStackReturns(nil)
+			k.SupportsManagedNodesReturns(true, nil)
+			init.NewAWSSelectorSessionReturns(nil)
+			init.ExpandInstanceSelectorOptionsReturns(nil)
+			k.ValidateClusterForCompatibilityReturns(nil)
+			f.SetOnlyLocalReturns(nil)
+			init.DoesAWSNodeUseIRSAReturns(false, nil)
+			sm.DoAllNodegroupStackTasksReturns(nil)
+		},
+		expErr: nil,
 	}),
 
 	Entry("[happy path] creates nodegroup", ngEntry{
