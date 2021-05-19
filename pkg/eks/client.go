@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
+	"github.com/weaveworks/eksctl/pkg/authconfigmap"
 	kubewrapper "github.com/weaveworks/eksctl/pkg/kubernetes"
 	"github.com/weaveworks/eksctl/pkg/utils/kubeconfig"
 )
@@ -116,6 +117,23 @@ func (c *ClusterProvider) NewRawClient(spec *api.ClusterConfig) (*kubewrapper.Ra
 	return kubewrapper.NewRawClient(clientSet, client.rawConfig)
 }
 
+// ServerVersion will use discovery API to fetch version of Kubernetes control plane
 func (c *ClusterProvider) ServerVersion(rawClient *kubewrapper.RawClient) (string, error) {
 	return rawClient.ServerVersion()
+}
+
+// UpdateAuthConfigMap creates or adds a nodegroup IAM role in the auth ConfigMap for the given nodegroup.
+func (c *ClusterProvider) UpdateAuthConfigMap(nodeGroups []*api.NodeGroup, clientSet kubernetes.Interface) error {
+	for _, ng := range nodeGroups {
+		// authorise nodes to join
+		if err := authconfigmap.AddNodeGroup(clientSet, ng); err != nil {
+			return err
+		}
+
+		// wait for nodes to join
+		if err := c.WaitForNodes(clientSet, ng); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/weaveworks/eksctl/pkg/vpc"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
-	"github.com/weaveworks/eksctl/pkg/authconfigmap"
 	"github.com/weaveworks/eksctl/pkg/ctl/cmdutils"
 )
 
@@ -212,16 +211,8 @@ func (m *Manager) postNodeCreationTasks(clientSet kubernetes.Interface, options 
 	}
 
 	if options.UpdateAuthConfigMap {
-		for _, ng := range m.cfg.NodeGroups {
-			// authorise nodes to join
-			if err := authconfigmap.AddNodeGroup(clientSet, ng); err != nil {
-				return err
-			}
-
-			// wait for nodes to join
-			if err := m.ctl.WaitForNodes(clientSet, ng); err != nil {
-				return err
-			}
+		if err := m.ctl.KubeProvider.UpdateAuthConfigMap(m.cfg.NodeGroups, clientSet); err != nil {
+			return err
 		}
 	}
 	logger.Success("created %d nodegroup(s) in cluster %q", len(m.cfg.NodeGroups), m.cfg.Metadata.Name)
