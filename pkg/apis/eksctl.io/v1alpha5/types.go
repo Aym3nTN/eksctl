@@ -841,10 +841,6 @@ type NodeGroup struct {
 	// +optional
 	Taints map[string]string `json:"taints,omitempty"`
 
-	// UpdateConfig configures how to update NodeGroups.
-	// +pptional
-	UpdateConfig *NodeGroupUpdateConfig `json:"updateConfig,omitempty"`
-
 	// +optional
 	Bottlerocket *NodeGroupBottlerocket `json:"bottlerocket,omitempty"`
 
@@ -1375,7 +1371,7 @@ type ManagedNodeGroup struct {
 	Taints []NodeGroupTaint `json:"taints,omitempty"`
 
 	// UpdateConfig configures how to update NodeGroups.
-	// +pptional
+	// +optional
 	UpdateConfig *NodeGroupUpdateConfig `json:"updateConfig,omitempty"`
 
 	// LaunchTemplate specifies an existing launch template to use

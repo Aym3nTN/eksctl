@@ -1063,14 +1063,9 @@
           "x-intellij-html-description": "taints to apply to the nodegroup"
         },
         "updateConfig": {
-          "items": {
-            "type": "integer",
-            "$ref": "#/definitions/NodeGroupUpdateConfig"
-          },
-          "type": "object",
-          "description": "Configuration for how to update nodegroups",
-          "x-intellij-html-description": "Configuration for how to update nodegroups",
-          "default": "{}"
+          "$ref": "#/definitions/NodeGroupUpdateConfig",
+          "description": "configures how to update NodeGroups.",
+          "x-intellij-html-description": "configures how to update NodeGroups."
         },
         "volumeEncrypted": {
           "type": "boolean"
@@ -1119,7 +1114,6 @@
         "minSize",
         "maxSize",
         "volumeSize",
-        "updateConfig",
         "ssh",
         "labels",
         "privateNetworking",
@@ -1146,6 +1140,7 @@
         "instanceTypes",
         "spot",
         "taints",
+        "updateConfig",
         "launchTemplate",
         "releaseVersion"
       ],
@@ -1380,14 +1375,9 @@
           "x-intellij-html-description": "Associate target group with auto scaling group"
         },
         "updateConfig": {
-          "items": {
-            "type": "integer",
-            "$ref": "#/definitions/NodeGroupUpdateConfig"
-          },
-          "type": "object",
-          "description": "Configure how to update nodegroups",
-          "x-intellij-html-description": "Configure how to update nodegroups",
-          "default": "{}"
+          "$ref": "#/definitions/NodeGroupUpdateConfig",
+          "description": "configures how to update NodeGroups.",
+          "x-intellij-html-description": "configures how to update NodeGroups."
         },
         "volumeEncrypted": {
           "type": "boolean"
@@ -1436,7 +1426,6 @@
         "minSize",
         "maxSize",
         "volumeSize",
-        "updateConfig",
         "ssh",
         "labels",
         "privateNetworking",
@@ -1466,6 +1455,7 @@
         "classicLoadBalancerNames",
         "targetGroupARNs",
         "taints",
+        "updateConfig",
         "bottlerocket",
         "clusterDNS",
         "kubeletExtraConfig"
@@ -1757,18 +1747,22 @@
       "properties": {
         "maxUnavailable": {
           "type": "integer",
-          "description": "Maximum number of nodes that can become unavailable when updating a nodegroup (specified as number)",
-          "x-intellij-html-description": "Maximum number of nodes that can become unavailable when updating a nodegroup (specified as number)"
+          "description": "sets the max number of nodes that can become unavailable when updating a nodegroup (specified as number)",
+          "x-intellij-html-description": "sets the max number of nodes that can become unavailable when updating a nodegroup (specified as number)"
         },
         "maxUnavailablePercentage": {
           "type": "integer",
-          "description": "Maximum number of nodes that can become unavailable when updating a nodegroup (specified as percentage)",
-          "x-intellij-html-description": "Maximum number of nodes that can become unavailable when updating a nodegroup (specified as percentage)"
+          "description": "sets the max number of nodes that can become unavailable when updating a nodegroup (specified as percentage)",
+          "x-intellij-html-description": "sets the max number of nodes that can become unavailable when updating a nodegroup (specified as percentage)"
         }
       },
+      "preferredOrder": [
+        "maxUnavailable",
+        "maxUnavailablePercentage"
+      ],
       "additionalProperties": false,
-      "description": "contains configuration for how to update nodegroups",
-      "x-intellij-html-description": "holds configuration for how to update nodegroups"
+      "description": "contains the configuration for updating NodeGroups.",
+      "x-intellij-html-description": "contains the configuration for updating NodeGroups."
     },
     "OIDCIdentityProvider": {
       "required": [
