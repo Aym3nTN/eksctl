@@ -263,11 +263,8 @@ func NewCreateClusterLoader(cmd *Cmd, ngFilter *filter.NodeGroupFilter, ng *api.
 				if fluxCfg.GitProvider == "" {
 					return ErrMustBeSet("gitops.flux.gitProvider")
 				}
-				if fluxCfg.Owner == "" {
-					return ErrMustBeSet("gitops.flux.owner")
-				}
-				if fluxCfg.Repository == "" {
-					return ErrMustBeSet("gitops.flux.repo")
+				if len(fluxCfg.Flags) == 0 {
+					return ErrMustBeSet("gitops.flux.flags")
 				}
 			}
 		}
@@ -458,8 +455,10 @@ func makeManagedNodegroup(nodeGroup *api.NodeGroup, options CreateManagedNGOptio
 
 func validateManagedNGFlags(cmd *cobra.Command, managed bool) error {
 	if managed {
-		if flagName, found := findChangedFlag(cmd, incompatibleManagedNodesFlags()); found {
-			return ErrUnsupportedManagedFlag(fmt.Sprintf("--%s", flagName))
+		for _, f := range incompatibleManagedNodesFlags() {
+			if flag := cmd.Flag(f); flag != nil && flag.Changed {
+				return ErrUnsupportedManagedFlag(fmt.Sprintf("--%s", f))
+			}
 		}
 		return nil
 	}
