@@ -1,7 +1,6 @@
 package nodegroup_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/tj/assert"
@@ -9,7 +8,6 @@ import (
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/ctl/cmdutils/filter"
 	"github.com/weaveworks/eksctl/pkg/eks"
-	"github.com/weaveworks/eksctl/pkg/testutils"
 	"github.com/weaveworks/eksctl/pkg/testutils/mockprovider"
 )
 
@@ -27,16 +25,16 @@ func TestCreate(t *testing.T) {
 		// 	expErr:    fmt.Errorf("invalid version, %s is no longer supported, supported values: auto, default, latest, %s\nsee also: https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html", "1.14", strings.Join(api.SupportedVersions(), ", ")),
 		// 	mockCalls: func(p *mockprovider.MockProvider) {},
 		// },
-		"no ARM support": {
-			version: "1.17",
-			pStatus: &eks.ProviderStatus{
-				ClusterInfo: &eks.ClusterInfo{
-					Cluster: testutils.NewFakeCluster("my-cluster", ""),
-				},
-			},
-			mockCalls: func(p *mockprovider.MockProvider) {},
-			expErr:    fmt.Errorf("err"),
-		},
+		// "no ARM support": {
+		// 	version: "1.17",
+		// 	pStatus: &eks.ProviderStatus{
+		// 		ClusterInfo: &eks.ClusterInfo{
+		// 			Cluster: testutils.NewFakeCluster("my-cluster", ""),
+		// 		},
+		// 	},
+		// 	mockCalls: func(p *mockprovider.MockProvider) {},
+		// 	expErr:    fmt.Errorf("err"),
+		// },
 		// "creating a cluster returns no error": {
 		// 	pStatus: &eks.ProviderStatus{
 		// 		ClusterInfo: &eks.ClusterInfo{
