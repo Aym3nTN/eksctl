@@ -1180,10 +1180,10 @@ type (
 		// +optional
 		MaxUnavailable *int `json:"maxUnavailable,omitempty"`
 
-		// MaxUnavailableInPercentage sets the max number of nodes that can become unavailable
+		// MaxUnavailablePercentage sets the max number of nodes that can become unavailable
 		// when updating a nodegroup (specified as percentage)
 		// +optional
-		MaxUnavailableInPercentage *int `json:"maxUnavailablePercentage,omitempty"`
+		MaxUnavailablePercentage *int `json:"maxUnavailablePercentage,omitempty"`
 	}
 )
 
