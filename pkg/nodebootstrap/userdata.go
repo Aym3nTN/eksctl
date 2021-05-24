@@ -1,6 +1,7 @@
 package nodebootstrap
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/kris-nova/logger"
 	"github.com/pkg/errors"
+	"github.com/weaveworks/eksctl/pkg/nodebootstrap/utils"
 
 	api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
 	"github.com/weaveworks/eksctl/pkg/cloudconfig"
@@ -23,7 +25,6 @@ const (
 	configDir             = "/etc/eksctl/"
 	envFile               = "kubelet.env"
 	extraKubeConfFile     = "kubelet-extra.json"
-	extraDockerConfFile   = "docker-extra.json"
 	commonLinuxBootScript = "bootstrap.helper.sh"
 )
 
@@ -45,7 +46,7 @@ func NewBootstrapper(clusterSpec *api.ClusterConfig, ng *api.NodeGroup) Bootstra
 			logger.Warning("Custom AMI detected for nodegroup %s, using legacy nodebootstrap mechanism. Please refer to https://github.com/weaveworks/eksctl/issues/3563 for upcoming breaking changes", ng.Name)
 			return legacy.NewUbuntuBootstrapper(clusterSpec, ng)
 		}
-		return NewUbuntuBootstrapper(clusterSpec.Metadata.Name, ng)
+		return NewUbuntuBootstrapper(clusterSpec, ng)
 	case api.NodeImageFamilyBottlerocket:
 		return NewBottlerocketBootstrapper(clusterSpec, ng)
 	case api.NodeImageFamilyAmazonLinux2:
@@ -54,13 +55,13 @@ func NewBootstrapper(clusterSpec *api.ClusterConfig, ng *api.NodeGroup) Bootstra
 			logger.Warning("Custom AMI detected for nodegroup %s, using legacy nodebootstrap mechanism. Please refer to https://github.com/weaveworks/eksctl/issues/3563 for upcoming breaking changes", ng.Name)
 			return legacy.NewAL2Bootstrapper(clusterSpec, ng)
 		}
-		return NewAL2Bootstrapper(clusterSpec.Metadata.Name, ng)
+		return NewAL2Bootstrapper(clusterSpec, ng)
 	}
 
 	return nil
 }
 
-func linuxConfig(bootScript, clusterName string, ng *api.NodeGroup, scripts ...string) (string, error) {
+func linuxConfig(clusterConfig *api.ClusterConfig, bootScript string, ng *api.NodeGroup, scripts ...string) (string, error) {
 	config := cloudconfig.New()
 
 	for _, command := range ng.PreBootstrapCommands {
@@ -76,21 +77,12 @@ func linuxConfig(bootScript, clusterName string, ng *api.NodeGroup, scripts ...s
 		config.AddShellCommand(*ng.OverrideBootstrapCommand)
 	} else {
 		scripts = append(scripts, commonLinuxBootScript, bootScript)
-
 		kubeletConf, err := makeKubeletExtraConf(ng)
 		if err != nil {
 			return "", err
 		}
-		files = append(files, kubeletConf)
-
-		dockerDaemonConf, err := makeDockerDaemonExtraConf()
-		if err != nil {
-			return "", err
-		}
-		files = append(files, dockerDaemonConf)
-
-		envFile := makeBootstrapEnv(clusterName, ng)
-		files = append(files, envFile)
+		envFile := makeBootstrapEnv(clusterConfig, ng)
+		files = append(files, kubeletConf, envFile)
 	}
 
 	if err := addFilesAndScripts(config, files, scripts); err != nil {
@@ -109,7 +101,6 @@ func makeKubeletExtraConf(ng *api.NodeGroup) (cloudconfig.File, error) {
 	if ng.KubeletExtraConfig == nil {
 		ng.KubeletExtraConfig = &api.InlineDocument{}
 	}
-	(*ng.KubeletExtraConfig)["cgroupDriver"] = "systemd"
 
 	data, err := json.Marshal(ng.KubeletExtraConfig)
 	if err != nil {
@@ -127,24 +118,13 @@ func makeKubeletExtraConf(ng *api.NodeGroup) (cloudconfig.File, error) {
 	}, nil
 }
 
-func makeDockerDaemonExtraConf() (cloudconfig.File, error) {
-	config := map[string][]string{"exec-opts": {"native.cgroupdriver=systemd"}}
-	data, err := json.Marshal(config)
-	if err != nil {
-		return cloudconfig.File{}, err
-	}
-
-	return cloudconfig.File{
-		Path:    configDir + extraDockerConfFile,
-		Content: string(data),
-	}, nil
-}
-
-func makeBootstrapEnv(clusterName string, ng *api.NodeGroup) cloudconfig.File {
+func makeBootstrapEnv(clusterConfig *api.ClusterConfig, ng *api.NodeGroup) cloudconfig.File {
 	variables := []string{
+		fmt.Sprintf("CLUSTER_NAME=%s", clusterConfig.Metadata.Name),
+		fmt.Sprintf("API_SERVER_URL=%s", clusterConfig.Status.Endpoint),
+		fmt.Sprintf("B64_CLUSTER_CA=%s", base64.StdEncoding.EncodeToString(clusterConfig.Status.CertificateAuthorityData)),
 		fmt.Sprintf("NODE_LABELS=%s", kvs(ng.Labels)),
-		fmt.Sprintf("NODE_TAINTS=%s", mapTaints(ng.Taints)),
-		fmt.Sprintf("CLUSTER_NAME=%s", clusterName),
+		fmt.Sprintf("NODE_TAINTS=%s", utils.FormatTaints(ng.Taints)),
 	}
 
 	if ng.ClusterDNS != "" {
@@ -155,18 +135,6 @@ func makeBootstrapEnv(clusterName string, ng *api.NodeGroup) cloudconfig.File {
 		Path:    configDir + envFile,
 		Content: strings.Join(variables, "\n"),
 	}
-}
-
-func mapTaints(kv map[string]string) string {
-	var params []string
-	for k, v := range kv {
-		if strings.Contains(v, ":") {
-			params = append(params, fmt.Sprintf("%s=%s", k, v))
-			continue
-		}
-		params = append(params, fmt.Sprintf("%s=:%s", k, v))
-	}
-	return strings.Join(params, ",")
 }
 
 func kvs(kv map[string]string) string {

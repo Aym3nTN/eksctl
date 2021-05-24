@@ -1,6 +1,8 @@
 package v1alpha5
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -17,6 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	"github.com/pkg/errors"
+	"github.com/weaveworks/eksctl/pkg/utils/taints"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -839,7 +843,7 @@ type NodeGroup struct {
 
 	// Taints taints to apply to the nodegroup
 	// +optional
-	Taints map[string]string `json:"taints,omitempty"`
+	Taints taintsWrapper `json:"taints,omitempty"`
 
 	// +optional
 	Bottlerocket *NodeGroupBottlerocket `json:"bottlerocket,omitempty"`
@@ -871,7 +875,7 @@ func (n *NodeGroup) BaseNodeGroup() *NodeGroupBase {
 // cluster and linking it to a Git repository.
 // Note: this will replace the older Git types
 type GitOps struct {
-	// [Enable Flux](/usage/gitops/#experimental-installing-gitops-toolkit-flux-v2)
+	// [Enable Toolkit](/usage/gitops/#experimental-installing-gitops-toolkit-flux-v2)
 	Flux *Flux `json:"flux,omitempty"`
 }
 
@@ -907,13 +911,39 @@ type Flux struct {
 	// The repository hosting service. Can be either Github or Gitlab.
 	GitProvider string `json:"gitProvider,omitempty"`
 
-	// Flags is an arbitrary map of string to string to pass any flags to Flux bootstrap
-	// via eksctl see https://fluxcd.io/docs/ for information on all flags
-	Flags FluxFlags `json:"flags,omitempty"`
-}
+	// The Username or Org name under which Flux v2 will create a repo
+	Owner string `json:"owner,omitempty"`
 
-// FluxFlags is a map of string for passing arbitrary flags to Flux bootstrap
-type FluxFlags map[string]string
+	// The name of the repository which Flux v2 will create to store gitops configuration
+	Repository string `json:"repository,omitempty"`
+
+	// The kubernetes namespace into which Flux v2 components will be deployed
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	// Path to the kubernetes config for the cluster. Defaults to $HOME/.kube/config
+	// +optional
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+
+	// The name of the branch which Flux will commit to
+	// +optional
+	Branch string `json:"branch,omitempty"`
+
+	// A relative path within the repository. Gitops sync will be scoped to files
+	// under this path
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// If true, Flux will create the Gitops repo in a personal account.
+	// If false, Flux will create the Gitops repo in an org.
+	// +optional
+	Personal bool `json:"personal,omitempty"`
+
+	// Path to a file containing a Personal Access Token with repo permissions
+	// Not required if GITHUB_TOKEN or GITLAB_TOKEN set on the environment
+	// +optional
+	AuthTokenPath string `json:"authTokenPath,omitempty"`
+}
 
 // Repo groups all configuration options related to a Git repository used for
 // GitOps.
@@ -1506,6 +1536,35 @@ type InstanceSelector struct {
 // IsZero returns true if all fields hold a zero value
 func (is InstanceSelector) IsZero() bool {
 	return is == InstanceSelector{}
+}
+
+// taintsWrapper handles unmarshalling both map[string]string and []NodeGroupTaint
+type taintsWrapper []NodeGroupTaint
+
+// UnmarshalJSON implements json.Unmarshaler
+func (t *taintsWrapper) UnmarshalJSON(data []byte) error {
+	taintsMap := map[string]string{}
+	err := json.Unmarshal(data, &taintsMap)
+	if err == nil {
+		parsed := taints.Parse(taintsMap)
+		for _, p := range parsed {
+			*t = append(*t, NodeGroupTaint{
+				Key:    p.Key,
+				Value:  p.Value,
+				Effect: p.Effect,
+			})
+		}
+		return nil
+	}
+
+	var ngTaints []NodeGroupTaint
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&ngTaints); err != nil {
+		return errors.Wrap(err, "taints must be a {string: string} or a [{key, value, effect}]")
+	}
+	*t = ngTaints
+	return nil
 }
 
 // UnsupportedFeatureError is an error that represents an unsupported feature
