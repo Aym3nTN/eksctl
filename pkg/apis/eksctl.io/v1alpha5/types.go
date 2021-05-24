@@ -841,10 +841,6 @@ type NodeGroup struct {
 	// +optional
 	Taints map[string]string `json:"taints,omitempty"`
 
-	// UpdateConfig configures how to update NodeGroups.
-	// +optional
-	UpdateConfig *NodeGroupUpdateConfig `json:"updateConfig,omitempty"`
-
 	// +optional
 	Bottlerocket *NodeGroupBottlerocket `json:"bottlerocket,omitempty"`
 

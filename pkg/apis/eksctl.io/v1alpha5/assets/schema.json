@@ -1374,11 +1374,6 @@
           "description": "Associate target group with auto scaling group",
           "x-intellij-html-description": "Associate target group with auto scaling group"
         },
-        "updateConfig": {
-          "$ref": "#/definitions/NodeGroupUpdateConfig",
-          "description": "configures how to update NodeGroups.",
-          "x-intellij-html-description": "configures how to update NodeGroups."
-        },
         "volumeEncrypted": {
           "type": "boolean"
         },
@@ -1455,7 +1450,6 @@
         "classicLoadBalancerNames",
         "targetGroupARNs",
         "taints",
-        "updateConfig",
         "bottlerocket",
         "clusterDNS",
         "kubeletExtraConfig"

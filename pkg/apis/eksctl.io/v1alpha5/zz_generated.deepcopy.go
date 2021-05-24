@@ -993,11 +993,6 @@ func (in *NodeGroup) DeepCopyInto(out *NodeGroup) {
 			(*out)[key] = val
 		}
 	}
-	if in.UpdateConfig != nil {
-		in, out := &in.UpdateConfig, &out.UpdateConfig
-		*out = new(NodeGroupUpdateConfig)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Bottlerocket != nil {
 		in, out := &in.Bottlerocket, &out.Bottlerocket
 		*out = new(NodeGroupBottlerocket)
