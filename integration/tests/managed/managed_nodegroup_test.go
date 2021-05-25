@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awseks "github.com/aws/aws-sdk-go/service/eks"
 	harness "github.com/dlespiau/kube-test-harness"
 	. "github.com/onsi/ginkgo"
@@ -350,14 +351,34 @@ var _ = Describe("(Integration) Create Managed Nodegroups", func() {
 		})
 
 		Context("and creating a nodegroup with an update config", func() {
-			It("should not return an error", func() {
-				cmd := params.EksctlCreateCmd.WithArgs(
-					"nodegroup",
-					"--cluster", params.ClusterName,
-					"--nodes", "4",
-					"--managed",
-					"--update-config", "max-parallel=20",
-				)
+			It("defining the UpdateConfig field in the cluster config", func() {
+				updateConfig := &api.NodeGroupUpdateConfig{
+					MaxUnavailable: aws.Int(4),
+				}
+				clusterConfig := api.NewClusterConfig()
+				clusterConfig.Metadata.Name = params.ClusterName
+				clusterConfig.Metadata.Region = params.Region
+				clusterConfig.Metadata.Version = params.Version
+				clusterConfig.ManagedNodeGroups = []*api.ManagedNodeGroup{
+					{
+						NodeGroupBase: &api.NodeGroupBase{
+							Name: "updateConfig",
+						},
+						UpdateConfig: updateConfig,
+					},
+				}
+
+				data, err := json.Marshal(clusterConfig)
+				Expect(err).ToNot(HaveOccurred())
+
+				cmd := params.EksctlCreateCmd.
+					WithArgs(
+						"nodegroup",
+						"--config-file", "-",
+						"--verbose", "4",
+					).
+					WithoutArg("--region", params.Region).
+					WithStdin(bytes.NewReader(data))
 				Expect(cmd).To(RunSuccessfully())
 			})
 		})
